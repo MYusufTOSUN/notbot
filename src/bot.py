@@ -90,25 +90,42 @@ class OBSBot:
         return False
     
     async def _solve_captcha(self) -> bool:
-        """Selçuk ÖBS captcha çözücü - Önce HTML'den, sonra OCR"""
+        """Selçuk ÖBS captcha çözücü - Gelişmiş Strateji"""
         try:
             captcha_text = None
-            
-            # Yöntem 1: Captcha görselinin alt veya title attribute'undan al
-            # Resimde tooltip görünüyor, muhtemelen title attribute'unda yazıyor
             captcha_element = await self.page.query_selector('img#Image1')
+            
             if captcha_element:
+                # 1. img etiketinin title veya alt özelliği
                 title_text = await captcha_element.get_attribute('title')
                 alt_text = await captcha_element.get_attribute('alt')
                 
                 if title_text and title_text.isdigit() and len(title_text) == 4:
                     captcha_text = title_text
-                    log_info(f"Captcha HTML'den alındı (title): {captcha_text}")
+                    log_info(f"Captcha HTML'den alındı (img title): {captcha_text}")
                 elif alt_text and alt_text.isdigit() and len(alt_text) == 4:
                     captcha_text = alt_text
-                    log_info(f"Captcha HTML'den alındı (alt): {captcha_text}")
-            
-            # Yöntem 2: Hidden input kontrolü
+                    log_info(f"Captcha HTML'den alındı (img alt): {captcha_text}")
+                
+                # 2. img etiketinin ebeveyninin (parent) title özelliği (Tooltip genelde burada olur)
+                if not captcha_text:
+                    parent_element = await captcha_element.query_selector('..')
+                    if parent_element:
+                        parent_title = await parent_element.get_attribute('title')
+                        if parent_title and parent_title.isdigit() and len(parent_title) == 4:
+                            captcha_text = parent_title
+                            log_info(f"Captcha HTML'den alındı (parent title): {captcha_text}")
+                        
+                        # Parent'ın text içeriği
+                        parent_text = await parent_element.inner_text()
+                        if parent_text:
+                            import re
+                            matches = re.findall(r'\b(\d{4})\b', parent_text)
+                            if matches:
+                                captcha_text = matches[0]
+                                log_info(f"Captcha HTML'den alındı (parent text): {captcha_text}")
+
+            # 3. Gizli input kontrolü
             if not captcha_text:
                 hidden_inputs = await self.page.query_selector_all('input[type="hidden"]')
                 for inp in hidden_inputs:
@@ -118,7 +135,7 @@ class OBSBot:
                         log_info(f"Captcha hidden input'tan alındı: {captcha_text}")
                         break
             
-            # Yöntem 3: URL Parametresi
+            # 4. URL Parametresi
             if not captcha_text and captcha_element:
                 src = await captcha_element.get_attribute('src')
                 if src and 'text=' in src.lower():
@@ -128,11 +145,35 @@ class OBSBot:
                         captcha_text = match.group(1)
                         log_info(f"Captcha URL'den alındı: {captcha_text}")
             
-            # Yöntem 4: Son çare - OCR
+            # 5. Sayfa Kaynağında Regex Arama
+            if not captcha_text:
+                page_content = await self.page.content()
+                import re
+                # "7000" gibi tooltip değerleri bazen script içinde olur
+                matches = re.findall(r'Tooltip\s*\(.*["\'](\d{4})["\']', page_content, re.IGNORECASE)
+                if matches:
+                    captcha_text = matches[0]
+                    log_info(f"Captcha script içinden alındı: {captcha_text}")
+
+            # 6. Son çare - OCR
             if not captcha_text and captcha_element:
                 log_debug("HTML'de captcha bulunamadı, OCR deneniyor...")
+                # Windows için Tesseract yolunu kontrol et (Lokal çalışma için)
+                import shutil
+                if not shutil.which("tesseract"):
+                    # Yaygın Windows yolları
+                    common_paths = [
+                        r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+                        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+                        r"C:\Users\tosun\AppData\Local\Tesseract-OCR\tesseract.exe"
+                    ]
+                    for path in common_paths:
+                        if os.path.exists(path):
+                            pytesseract.pytesseract.tesseract_cmd = path
+                            log_debug(f"Tesseract yolu ayarlandı: {path}")
+                            break
+
                 screenshot_bytes = await captcha_element.screenshot()
-                # OCR handler'ı kullan
                 captcha_text = self.ocr_handler.extract_with_retry(screenshot_bytes, expected_length=4)
                 if captcha_text:
                     log_info(f"Captcha OCR ile çözüldü: {captcha_text}")
