@@ -14,17 +14,17 @@ load_dotenv()
 PROJECT_ROOT = Path(__file__).parent.parent
 
 # ÖBS Yapılandırması
-OBS_URL = os.getenv("OBS_URL", "https://obis1.selcuk.edu.tr")
-OBS_USERNAME = os.getenv("OBS_USER", "")  # GitHub Secret: OBS_USER
-OBS_PASSWORD = os.getenv("OBS_PASS", "")  # GitHub Secret: OBS_PASS
+OBS_URL = os.getenv("OBS_URL", "https://obis1.selcuk.edu.tr").strip()
+OBS_USERNAME = os.getenv("OBS_USER", "").strip()
+OBS_PASSWORD = os.getenv("OBS_PASS", "").strip()
 
 # Telegram Yapılandırması
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN", "")  # GitHub Secret: TELEGRAM_TOKEN
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN", "").strip()
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 
 # JSONBin.io Yapılandırması (Opsiyonel)
-JSONBIN_API_KEY = os.getenv("JSONBIN_KEY", "")  # GitHub Secret: JSONBIN_KEY
-JSONBIN_BIN_ID = os.getenv("JSONBIN_ID", "")  # GitHub Secret: JSONBIN_ID
+JSONBIN_API_KEY = os.getenv("JSONBIN_KEY", "").strip()
+JSONBIN_BIN_ID = os.getenv("JSONBIN_ID", "").strip()
 
 # GitHub Yapılandırması (Opsiyonel)
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
