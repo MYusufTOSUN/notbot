@@ -162,26 +162,16 @@ class OBSBot:
 
             # 6. Son çare - OCR
             if not captcha_text and captcha_element:
-                log_debug("HTML'de captcha bulunamadı, OCR deneniyor...")
-                # Windows için Tesseract yolunu kontrol et (Lokal çalışma için)
-                import shutil
-                if not shutil.which("tesseract"):
-                    # Yaygın Windows yolları
-                    common_paths = [
-                        r"C:\Program Files\Tesseract-OCR\tesseract.exe",
-                        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
-                        r"C:\Users\tosun\AppData\Local\Tesseract-OCR\tesseract.exe"
-                    ]
-                    for path in common_paths:
-                        if os.path.exists(path):
-                            pytesseract.pytesseract.tesseract_cmd = path
-                            log_debug(f"Tesseract yolu ayarlandı: {path}")
-                            break
-
+                log_debug("HTML'de captcha bulunamadı, OCR (EasyOCR) deneniyor...")
+                
                 screenshot_bytes = await captcha_element.screenshot()
+                # OCRHandler artık EasyOCR kullanıyor, Tesseract path ayarlamaya gerek yok
                 captcha_text = self.ocr_handler.extract_with_retry(screenshot_bytes, expected_length=4)
+                
                 if captcha_text:
                     log_info(f"Captcha OCR ile çözüldü: {captcha_text}")
+
+
             
             if not captcha_text:
                 log_warning("Captcha çözülemedi!")
