@@ -216,13 +216,30 @@ class OBSBot:
             
             # Hala login sayfasındaysa başarısız
             if 'txtcaptcha' in page_content_lower or 'btn-login' in page_content_lower:
-                error_el = await self.page.query_selector('.alert-danger, .alert-warning')
-                if error_el:
-                    error_text = await error_el.inner_text()
-                    msg = f"Hata mesajı: {error_text}"
-                    log_warning(msg)
-                    return False, msg
-                return False, "Hala login sayfasında"
+                msg = "Giriş başarısız oldu"
+                
+                # 1. Kırmızı span hata mesajı (Genellikle burada yazar)
+                # <span style="color:red;font-family:Arial, Helvetica, sans-serif;">Hatalı şifre</span>
+                span_error = await self.page.query_selector('span[style*="color:red"]')
+                if span_error:
+                    text = (await span_error.inner_text()).strip()
+                    if text:
+                        msg = f"Hata: {text}"
+                        log_warning(msg)
+                        return False, msg
+
+                # 2. Alert kutusu (ama 'hide' class'ı olmayacak ve şablon metni olmayacak)
+                alert_el = await self.page.query_selector('.alert-danger:not(.hide)')
+                if alert_el:
+                    text = (await alert_el.inner_text()).strip()
+                    # Şablon mesajını filtrele
+                    if text and "Your Error Message goes here" not in text:
+                        msg = f"Hata: {text.replace('Error!', '').strip()}"
+                        log_warning(msg)
+                        return False, msg
+                
+                # 3. Genel hata kontrolü
+                return False, "Giriş yapılamadı (Captcha veya Şifre hatası)"
             
             # Başarılı giriş göstergeleri
             success_indicators = ['anasayfa', 'çıkış', 'cikis', 'logout', 'son yıl notları', 'not durumu']
