@@ -5,6 +5,7 @@ Bu dosya botu başlatır ve tüm akışı yönetir.
 """
 import asyncio
 import sys
+from datetime import datetime
 from src.config import validate_config
 from src.bot import run_bot
 from src.data_manager import DataManager
@@ -26,6 +27,12 @@ async def main():
     notifier = TelegramNotifier()
     data_manager = DataManager()
     
+    # Sonuç bilgisi için değişkenler
+    result_status = "❓ Bilinmiyor"
+    result_details = ""
+    grades_count = 0
+    changes_count = 0
+    
     try:
         # Eski notları yükle
         old_grades = data_manager.load_grades()
@@ -36,29 +43,58 @@ async def main():
         
         if not success:
             log_error("ÖBS girişi başarısız!")
-            await notifier.send_error_notification("Login Hatası", "ÖBS'ye giriş yapılamadı")
-            sys.exit(1)
-        
-        if not new_grades:
-            log_info("Henüz not yok")
-            sys.exit(0)
-        
-        # Değişiklikleri tespit et
-        changes = data_manager.compare_grades(old_grades, new_grades)
-        
-        if changes:
-            log_success(f"{len(changes)} not değişikliği tespit edildi!")
-            await notifier.send_multiple_grade_notifications(changes)
-            data_manager.save_grades(new_grades)
+            result_status = "❌ Giriş Başarısız"
+            result_details = "ÖBS'ye giriş yapılamadı. Site erişilemez veya captcha çözülemedi."
         else:
-            log_info("Notlarda değişiklik yok")
+            grades_count = len(new_grades)
+            
+            if not new_grades:
+                log_info("Henüz not yok")
+                result_status = "✅ Çalıştı"
+                result_details = "Giriş başarılı, ancak henüz açıklanmış not bulunamadı."
+            else:
+                # Değişiklikleri tespit et
+                changes = data_manager.compare_grades(old_grades, new_grades)
+                changes_count = len(changes)
+                
+                if changes:
+                    log_success(f"{len(changes)} not değişikliği tespit edildi!")
+                    await notifier.send_multiple_grade_notifications(changes)
+                    data_manager.save_grades(new_grades)
+                    result_status = "🎉 Yeni Not!"
+                    result_details = f"{changes_count} adet not değişikliği tespit edildi ve bildirildi."
+                else:
+                    log_info("Notlarda değişiklik yok")
+                    result_status = "✅ Çalıştı"
+                    result_details = f"{grades_count} ders kontrol edildi, değişiklik yok."
         
         log_success("Bot başarıyla tamamlandı!")
         
     except Exception as e:
         log_error(f"Kritik hata: {e}")
-        await notifier.send_error_notification("Kritik Hata", str(e))
-        sys.exit(1)
+        result_status = "💥 Kritik Hata"
+        result_details = str(e)
+    
+    finally:
+        # Her durumda özet bildirim gönder
+        now = datetime.now().strftime("%d.%m.%Y %H:%M")
+        summary_message = (
+            f"📊 <b>ÖBS Bot Raporu</b>\n"
+            f"━━━━━━━━━━━━━━━━━━\n\n"
+            f"🕐 <b>Zaman:</b> {now}\n"
+            f"📌 <b>Durum:</b> {result_status}\n\n"
+            f"📝 <b>Detay:</b>\n{result_details}\n\n"
+            f"📚 <b>Kontrol Edilen:</b> {grades_count} ders\n"
+            f"🔔 <b>Değişiklik:</b> {changes_count} adet\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"🤖 <i>Sonraki kontrol 20 dk sonra</i>"
+        )
+        
+        try:
+            await notifier.send_message(summary_message)
+            log_success("Özet bildirim gönderildi")
+        except Exception as e:
+            log_error(f"Özet bildirim gönderilemedi: {e}")
 
 
 if __name__ == "__main__":
