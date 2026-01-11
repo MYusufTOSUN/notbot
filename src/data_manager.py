@@ -68,40 +68,64 @@ class DataManager:
             new_grades: Güncel notlar
             
         Returns:
-            Değişiklik listesi: [{"course": str, "old_grade": str, "new_grade": str}, ...]
+            Değişiklik listesi: [{
+                "course": str, 
+                "field": str,  # Değişen alan (vize1, final, harf, vs.)
+                "old_value": str, 
+                "new_value": str
+            }, ...]
         """
         changes = []
         
         # Meta verileri atla
         skip_keys = ["_last_updated", "_version"]
         
+        # İzlenecek önemli alanlar (öncelik sırasına göre)
+        tracked_fields = ["harf", "gn", "final", "but", "vize1", "vize2", "vize3", "vize4", "durum"]
+        
         for course, grade_info in new_grades.items():
             if course in skip_keys:
                 continue
             
-            new_grade = grade_info.get("not", "") if isinstance(grade_info, dict) else str(grade_info)
+            if not isinstance(grade_info, dict):
+                continue
             
             if course not in old_grades:
-                # Yeni ders eklendi
-                changes.append({
-                    "course": course,
-                    "old_grade": None,
-                    "new_grade": new_grade
-                })
-                log_info(f"Yeni ders tespit edildi: {course} = {new_grade}")
+                # Yeni ders eklendi - önemli notlar varsa bildir
+                important_values = []
+                for field in tracked_fields:
+                    value = grade_info.get(field, "")
+                    if value and value.strip():
+                        important_values.append(f"{field}: {value}")
                 
-            else:
-                old_grade_info = old_grades[course]
-                old_grade = old_grade_info.get("not", "") if isinstance(old_grade_info, dict) else str(old_grade_info)
-                
-                if new_grade != old_grade and new_grade:
-                    # Not değişti
+                if important_values:
                     changes.append({
                         "course": course,
-                        "old_grade": old_grade,
-                        "new_grade": new_grade
+                        "field": "yeni_ders",
+                        "old_value": None,
+                        "new_value": ", ".join(important_values[:3])  # İlk 3 önemli değeri göster
                     })
-                    log_info(f"Not değişikliği: {course}: {old_grade} -> {new_grade}")
+                    log_info(f"Yeni ders tespit edildi: {course}")
+                    
+            else:
+                old_grade_info = old_grades[course]
+                if not isinstance(old_grade_info, dict):
+                    old_grade_info = {}
+                
+                # Her alan için değişiklik kontrolü
+                for field in tracked_fields:
+                    new_value = grade_info.get(field, "").strip()
+                    old_value = old_grade_info.get(field, "").strip()
+                    
+                    # Boş olmayan yeni değer var ve eskiden farklıysa
+                    if new_value and new_value != old_value:
+                        changes.append({
+                            "course": course,
+                            "field": field,
+                            "old_value": old_value if old_value else "boş",
+                            "new_value": new_value
+                        })
+                        log_info(f"Not değişikliği: {course} - {field}: {old_value or 'boş'} -> {new_value}")
         
         if not changes:
             log_debug("Notlarda değişiklik yok")

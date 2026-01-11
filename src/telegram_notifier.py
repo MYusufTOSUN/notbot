@@ -80,47 +80,44 @@ class TelegramNotifier:
     async def send_multiple_grade_notifications(self, changes: List[Dict]) -> int:
         """
         Birden fazla not değişikliği bildirimi gönder.
-        
-        Args:
-            changes: [{"course": str, "old_grade": str, "new_grade": str}, ...]
-            
-        Returns:
-            Başarıyla gönderilen bildirim sayısı
+        Basit format: DERS ADI: XX (not türü)
         """
         if not changes:
             return 0
         
+        # Alan adlarını Türkçeleştir
+        field_names = {
+            "vize1": "Vize1",
+            "vize2": "Vize2", 
+            "vize3": "Vize3",
+            "vize4": "Vize4",
+            "final": "Final",
+            "but": "Büt",
+            "gn": "GN",
+            "harf": "Harf",
+            "durum": "Durum",
+            "yeni_ders": "Yeni"
+        }
+        
         success_count = 0
         
         # Tüm değişiklikleri tek bir mesajda gönder
-        if len(changes) > 1:
-            message = "🔔 <b>NOT GÜNCELLEMELERİ!</b>\n\n"
+        message = "🔔 <b>NOT GÜNCELLEMESİ</b>\n\n"
+        
+        for change in changes:
+            course = change.get("course", "Bilinmeyen Ders")
+            field = change.get("field", "not")
+            new_value = change.get("new_value", "-")
             
-            for change in changes:
-                course = change.get("course", "Bilinmeyen Ders")
-                old_grade = change.get("old_grade", "-")
-                new_grade = change.get("new_grade", "-")
-                
-                if old_grade and old_grade != "-":
-                    message += f"📚 <b>{course}</b>\n"
-                    message += f"   {old_grade} ➡️ {new_grade}\n\n"
-                else:
-                    message += f"📚 <b>{course}</b>\n"
-                    message += f"   ✨ Yeni Not: {new_grade}\n\n"
+            field_display = field_names.get(field, field)
             
-            message += "🎓 ÖBS Botunuz sizin için çalışıyor!"
-            
-            if await self.send_message(message):
-                success_count = len(changes)
-        else:
-            # Tek değişiklik varsa detaylı mesaj gönder
-            change = changes[0]
-            if await self.send_grade_notification(
-                change.get("course", ""),
-                change.get("new_grade", ""),
-                change.get("old_grade")
-            ):
-                success_count = 1
+            # Basit format: DERS ADI: XX (not türü)
+            message += f"📚 {course}: <b>{new_value}</b> ({field_display})\n"
+        
+        message += "\n🎓 ÖBS Bot"
+        
+        if await self.send_message(message):
+            success_count = len(changes)
         
         log_info(f"{success_count}/{len(changes)} bildirim gönderildi")
         return success_count

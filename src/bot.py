@@ -19,7 +19,7 @@ class OBSBot:
         
         # Selçuk Üniversitesi OBİS URL'leri
         self.login_url = OBS_URL  # Ana sayfa = giriş sayfası
-        self.grades_url = f"{OBS_URL}/OgrenimBilgileri/NotListesi"
+        self.grades_url = f"{OBS_URL}/Ogrenci/SonYilNotlari"
         
     async def start(self):
         log_info("Tarayıcı başlatılıyor...")
@@ -148,7 +148,7 @@ class OBSBot:
             return False
     
     async def fetch_grades(self) -> Dict:
-        """Notları çek - Selçuk ÖBS yapısına uygun"""
+        """Notları çek - Selçuk ÖBS Son Yıl Notları sayfasına uygun"""
         grades = {}
         
         try:
@@ -157,45 +157,32 @@ class OBSBot:
             await self.page.goto(self.grades_url, wait_until="networkidle")
             await asyncio.sleep(3)
             
-            # Alternatif URL'ler dene
-            if "NotListesi" not in self.page.url:
-                # Menüden not sayfasına gitmeyi dene
-                alt_urls = [
-                    f"{OBS_URL}/OgrenciIsleri/NotListesi",
-                    f"{OBS_URL}/Ogrenci/NotListesi",
-                    f"{OBS_URL}/not-listesi",
-                ]
-                for url in alt_urls:
-                    try:
-                        await self.page.goto(url, wait_until="networkidle")
-                        await asyncio.sleep(2)
-                        if "not" in self.page.url.lower():
-                            break
-                    except:
-                        continue
-            
             log_debug(f"Sayfa URL: {self.page.url}")
             
-            # Tablo satırlarını bul
-            # Farklı tablo yapılarını dene
+            # Tablo satırlarını bul - #dynamic-table veya table.table-striped
             table_selectors = [
+                '#dynamic-table tbody tr',
+                'table.table-striped tbody tr',
+                'table.table-bordered tbody tr',
                 'table.table tbody tr',
-                'table.dataTable tbody tr',
-                '.not-tablosu tr',
-                'table tr',
-                '#notListesi tr'
             ]
             
             rows = []
             for selector in table_selectors:
                 rows = await self.page.query_selector_all(selector)
-                if len(rows) > 1:
+                if len(rows) > 0:
                     log_debug(f"Tablo bulundu: {selector} ({len(rows)} satır)")
                     break
             
+            # Selçuk ÖBS Son Yıl Notları tablo yapısı:
+            # 0: Ders Kodu | 1: Yarı Yıl | 2: Ders Adı | 3: Kredi(AKTS)
+            # 4: Vize1 | 5: Vize2 | 6: Vize3 | 7: Vize4
+            # 8: Final | 9: Büt | 10: Muaf-2 | 11: GN (Genel Not)
+            # 12: Harf | 13: Durum | 14: (Harf Düzeyleri link)
+            
             for row in rows:
                 cells = await row.query_selector_all('td')
-                if len(cells) >= 2:
+                if len(cells) >= 10:  # En az temel sütunlar olmalı
                     try:
                         texts = []
                         for cell in cells:
@@ -206,17 +193,32 @@ class OBSBot:
                         if not any(texts):
                             continue
                         
-                        # Tipik yapı: Ders Kodu | Ders Adı | Kredi | Vize | Final | Ortalama
-                        course_name = texts[1] if len(texts) > 1 and texts[1] else texts[0]
+                        ders_kodu = texts[0] if len(texts) > 0 else ""
+                        ders_adi = texts[2] if len(texts) > 2 else ""
                         
-                        if course_name and len(course_name) > 2:
-                            grades[course_name] = {
-                                "kod": texts[0] if len(texts) > 0 else "",
-                                "vize": texts[3] if len(texts) > 3 else "",
-                                "final": texts[4] if len(texts) > 4 else "",
-                                "not": texts[-1] if texts[-1] else ""
-                            }
-                            log_debug(f"Ders: {course_name}")
+                        # Ders adı yoksa veya çok kısaysa atla
+                        if not ders_adi or len(ders_adi) < 3:
+                            continue
+                        
+                        # Not bilgilerini çıkar
+                        grade_data = {
+                            "kod": ders_kodu,
+                            "yariyil": texts[1] if len(texts) > 1 else "",
+                            "kredi": texts[3] if len(texts) > 3 else "",
+                            "vize1": texts[4] if len(texts) > 4 else "",
+                            "vize2": texts[5] if len(texts) > 5 else "",
+                            "vize3": texts[6] if len(texts) > 6 else "",
+                            "vize4": texts[7] if len(texts) > 7 else "",
+                            "final": texts[8] if len(texts) > 8 else "",
+                            "but": texts[9] if len(texts) > 9 else "",
+                            "muaf2": texts[10] if len(texts) > 10 else "",
+                            "gn": texts[11] if len(texts) > 11 else "",
+                            "harf": texts[12].replace("--", "").strip() if len(texts) > 12 else "",
+                            "durum": texts[13] if len(texts) > 13 else ""
+                        }
+                        
+                        grades[ders_adi] = grade_data
+                        log_debug(f"Ders: {ders_adi} | Vize1: {grade_data['vize1']} | Final: {grade_data['final']} | Harf: {grade_data['harf']}")
                             
                     except Exception as e:
                         log_debug(f"Satır işlenemedi: {e}")
