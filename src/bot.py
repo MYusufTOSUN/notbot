@@ -160,19 +160,29 @@ class OBSBot:
                     captcha_text = matches[0]
                     log_info(f"Captcha script içinden alındı: {captcha_text}")
 
-            # 6. Son çare - OCR
+            # 6. Son çare - Gelişmiş OCR (7 farklı strateji ile)
             if not captcha_text and captcha_element:
-                log_debug("HTML'de captcha bulunamadı, OCR (EasyOCR) deneniyor...")
+                log_info("HTML'de captcha bulunamadı, Gelişmiş OCR sistemi devreye giriyor...")
                 
-                screenshot_bytes = await captcha_element.screenshot()
-                # OCRHandler artık EasyOCR kullanıyor, Tesseract path ayarlamaya gerek yok
+                # Captcha görselini yüksek kalitede al
+                screenshot_bytes = await captcha_element.screenshot(type="png")
+                
+                # Orijinal görseli debug için kaydet
+                try:
+                    with open("temp/captcha_original.png", "wb") as f:
+                        f.write(screenshot_bytes)
+                    log_debug("Orijinal captcha görseli kaydedildi: temp/captcha_original.png")
+                except:
+                    pass
+                
+                # Gelişmiş OCR ile çöz (7 farklı strateji deneyecek)
                 captcha_text = self.ocr_handler.extract_with_retry(screenshot_bytes, expected_length=4)
                 
                 if captcha_text:
-                    log_info(f"Captcha OCR ile çözüldü: {captcha_text}")
+                    log_success(f"✓ Captcha OCR ile çözüldü: {captcha_text}")
+                else:
+                    log_warning("OCR tüm stratejileri denedi ama sonuç bulunamadı")
 
-
-            
             if not captcha_text:
                 log_warning("Captcha çözülemedi!")
                 return False

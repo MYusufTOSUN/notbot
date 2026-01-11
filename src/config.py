@@ -34,12 +34,12 @@ GITHUB_REPO = os.getenv("GITHUB_REPO", "")
 GRADES_FILE = PROJECT_ROOT / "notlar.json"
 LOGS_FILE = PROJECT_ROOT / "logs.txt"
 
-# OCR Yapılandırması
+# OCR Yapılandırması (EasyOCR + OpenCV)
 OCR_CONFIG = {
-    "lang": "eng",
-    "config": "--psm 7 --oem 3 -c tessedit_char_whitelist=0123456789",
-    "max_retries": 5,
-    "timeout": 30
+    "strategies": 7,  # Kullanılan strateji sayısı
+    "expected_length": 4,  # Beklenen captcha uzunluğu
+    "debug_mode": True,  # Debug görsellerini kaydet
+    "resize_scale": 2.0,  # Görüntü büyütme oranı
 }
 
 # Playwright Yapılandırması
@@ -52,7 +52,7 @@ BROWSER_CONFIG = {
 
 # Retry Yapılandırması
 RETRY_CONFIG = {
-    "max_attempts": 5,
+    "max_attempts": 7,  # OCR stratejileri ile daha fazla şans
     "delay_between_attempts": 2,  # saniye
     "captcha_retry_delay": 1  # saniye
 }
