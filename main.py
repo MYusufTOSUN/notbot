@@ -32,6 +32,7 @@ async def main():
     result_details = ""
     grades_count = 0
     changes_count = 0
+    donem_ortalamasi = ""
     
     try:
         # Eski notları yükle
@@ -46,6 +47,8 @@ async def main():
             result_status = "❌ Giriş Başarısız"
             result_details = "ÖBS'ye giriş yapılamadı. Site erişilemez veya captcha çözülemedi."
         else:
+            # Dönem ortalamasını al
+            donem_ortalamasi = new_grades.pop("_donem_ortalamasi", "")
             grades_count = len(new_grades)
             
             if not new_grades:
@@ -78,6 +81,12 @@ async def main():
     finally:
         # Her durumda özet bildirim gönder
         now = datetime.now().strftime("%d.%m.%Y %H:%M")
+        
+        # Ortalama bilgisi
+        ortalama_line = ""
+        if donem_ortalamasi:
+            ortalama_line = f"\n📈 <b>2024-2025 GÜZ:</b> {donem_ortalamasi}\n"
+        
         summary_message = (
             f"📊 <b>ÖBS Bot Raporu</b>\n"
             f"━━━━━━━━━━━━━━━━━━\n\n"
@@ -85,8 +94,9 @@ async def main():
             f"📌 <b>Durum:</b> {result_status}\n\n"
             f"📝 <b>Detay:</b>\n{result_details}\n\n"
             f"📚 <b>Kontrol Edilen:</b> {grades_count} ders\n"
-            f"🔔 <b>Değişiklik:</b> {changes_count} adet\n"
-            f"━━━━━━━━━━━━━━━━━━\n"
+            f"🔔 <b>Değişiklik:</b> {changes_count} adet"
+            f"{ortalama_line}"
+            f"\n━━━━━━━━━━━━━━━━━━\n"
             f"🤖 <i>Sonraki kontrol 20 dk sonra</i>"
         )
         

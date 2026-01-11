@@ -220,6 +220,26 @@ class OBSBot:
                         log_debug(f"Satır işlenemedi: {e}")
                         continue
             
+            # Dönem ortalamasını çek (ikinci tablo)
+            try:
+                ortalama_tables = await self.page.query_selector_all('table.table-striped.table-bordered.container tbody')
+                if ortalama_tables:
+                    ortalama_rows = await ortalama_tables[0].query_selector_all('tr')
+                    donem_ortalamasi = ""
+                    for orow in ortalama_rows:
+                        ocells = await orow.query_selector_all('td')
+                        if len(ocells) >= 2:
+                            label = (await ocells[0].inner_text()).strip().lower()
+                            value = (await ocells[1].inner_text()).strip()
+                            if 'dönem' in label and 'ortalama' in label:
+                                donem_ortalamasi = value
+                                log_debug(f"Dönem ortalaması: {value}")
+                    
+                    if donem_ortalamasi:
+                        grades["_donem_ortalamasi"] = donem_ortalamasi
+            except Exception as e:
+                log_debug(f"Ortalama çekilemedi: {e}")
+            
             log_success(f"Toplam {len(grades)} ders notu çekildi")
             
         except Exception as e:
