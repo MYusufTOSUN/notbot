@@ -90,31 +90,60 @@ class OBSBot:
         return False
     
     async def _solve_captcha(self) -> bool:
-        """Selçuk ÖBS captcha çözücü"""
+        """Selçuk ÖBS captcha çözücü - Önce HTML'den, sonra OCR"""
         try:
-            # Captcha görseli: img#Image1
+            captcha_text = None
+            
+            # Yöntem 1: Captcha görselinin alt veya title attribute'undan al
+            # Resimde tooltip görünüyor, muhtemelen title attribute'unda yazıyor
             captcha_element = await self.page.query_selector('img#Image1')
+            if captcha_element:
+                title_text = await captcha_element.get_attribute('title')
+                alt_text = await captcha_element.get_attribute('alt')
+                
+                if title_text and title_text.isdigit() and len(title_text) == 4:
+                    captcha_text = title_text
+                    log_info(f"Captcha HTML'den alındı (title): {captcha_text}")
+                elif alt_text and alt_text.isdigit() and len(alt_text) == 4:
+                    captcha_text = alt_text
+                    log_info(f"Captcha HTML'den alındı (alt): {captcha_text}")
             
-            if not captcha_element:
-                log_warning("Captcha görseli bulunamadı")
-                return False
+            # Yöntem 2: Hidden input kontrolü
+            if not captcha_text:
+                hidden_inputs = await self.page.query_selector_all('input[type="hidden"]')
+                for inp in hidden_inputs:
+                    value = await inp.get_attribute('value')
+                    if value and value.isdigit() and len(value) == 4:
+                        captcha_text = value
+                        log_info(f"Captcha hidden input'tan alındı: {captcha_text}")
+                        break
             
-            # Görselin ekran görüntüsünü al
-            screenshot_bytes = await captcha_element.screenshot()
-            log_debug("Captcha görseli yakalandı")
+            # Yöntem 3: URL Parametresi
+            if not captcha_text and captcha_element:
+                src = await captcha_element.get_attribute('src')
+                if src and 'text=' in src.lower():
+                    import re
+                    match = re.search(r'text=(\d+)', src, re.IGNORECASE)
+                    if match:
+                        captcha_text = match.group(1)
+                        log_info(f"Captcha URL'den alındı: {captcha_text}")
             
-            # OCR ile çöz (4 haneli sayı bekleniyor)
-            captcha_text = self.ocr_handler.extract_with_retry(screenshot_bytes, expected_length=4)
+            # Yöntem 4: Son çare - OCR
+            if not captcha_text and captcha_element:
+                log_debug("HTML'de captcha bulunamadı, OCR deneniyor...")
+                screenshot_bytes = await captcha_element.screenshot()
+                # OCR handler'ı kullan
+                captcha_text = self.ocr_handler.extract_with_retry(screenshot_bytes, expected_length=4)
+                if captcha_text:
+                    log_info(f"Captcha OCR ile çözüldü: {captcha_text}")
             
             if not captcha_text:
-                log_warning("OCR boş sonuç döndürdü")
+                log_warning("Captcha çözülemedi!")
                 return False
             
-            log_info(f"Captcha çözüldü: {captcha_text}")
-            
-            # Captcha input alanı: input#TxtCaptcha
+            # Captcha input alanına yaz
             await self.page.fill('input#TxtCaptcha', captcha_text)
-            log_debug("Captcha kodu girildi")
+            log_debug(f"Captcha kodu girildi: {captcha_text}")
             
             return True
             
