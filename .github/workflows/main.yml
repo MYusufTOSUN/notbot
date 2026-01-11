@@ -1,8 +1,6 @@
 name: ÖBS Not Kontrol
 
 on:
-  schedule:
-    - cron: '*/20 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -16,7 +14,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
 
       - name: Install Tesseract OCR
         run: |
@@ -40,11 +37,3 @@ jobs:
           JSONBIN_KEY: ${{ secrets.JSONBIN_KEY }}
           JSONBIN_ID: ${{ secrets.JSONBIN_ID }}
         run: python main.py
-
-      - name: Upload Logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: logs
-          path: logs.txt
-          retention-days: 7
