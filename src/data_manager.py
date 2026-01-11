@@ -90,6 +90,9 @@ class DataManager:
             if not isinstance(grade_info, dict):
                 continue
             
+            # Ders adını al
+            ders_adi = grade_info.get("ders_adi", course)
+            
             if course not in old_grades:
                 # Yeni ders eklendi - önemli notlar varsa bildir
                 important_values = []
@@ -100,12 +103,12 @@ class DataManager:
                 
                 if important_values:
                     changes.append({
-                        "course": course,
+                        "course": ders_adi,  # Ders adını kullan
                         "field": "yeni_ders",
                         "old_value": None,
-                        "new_value": ", ".join(important_values[:3])  # İlk 3 önemli değeri göster
+                        "new_value": ", ".join(important_values[:3])
                     })
-                    log_info(f"Yeni ders tespit edildi: {course}")
+                    log_info(f"Yeni ders tespit edildi: {ders_adi}")
                     
             else:
                 old_grade_info = old_grades[course]
@@ -120,12 +123,12 @@ class DataManager:
                     # Boş olmayan yeni değer var ve eskiden farklıysa
                     if new_value and new_value != old_value:
                         changes.append({
-                            "course": course,
+                            "course": ders_adi,  # Ders adını kullan
                             "field": field,
                             "old_value": old_value if old_value else "boş",
                             "new_value": new_value
                         })
-                        log_info(f"Not değişikliği: {course} - {field}: {old_value or 'boş'} -> {new_value}")
+                        log_info(f"Not değişikliği: {ders_adi} - {field}: {old_value or 'boş'} -> {new_value}")
         
         if not changes:
             log_debug("Notlarda değişiklik yok")

@@ -80,47 +80,35 @@ class TelegramNotifier:
     async def send_multiple_grade_notifications(self, changes: List[Dict]) -> int:
         """
         Birden fazla not değişikliği bildirimi gönder.
-        Basit format: DERS ADI: XX (not türü)
+        Kısa format: DERS ADI: XX
         """
         if not changes:
             return 0
         
         # Alan adlarını Türkçeleştir
         field_names = {
-            "vize1": "Vize1",
-            "vize2": "Vize2", 
-            "vize3": "Vize3",
-            "vize4": "Vize4",
-            "final": "Final",
-            "but": "Büt",
-            "gn": "GN",
-            "harf": "Harf",
-            "durum": "Durum",
-            "yeni_ders": "Yeni"
+            "vize1": "Vize", "vize2": "Vize2", "vize3": "Vize3", "vize4": "Vize4",
+            "final": "Final", "but": "Büt", "gn": "GN", "harf": "Harf",
+            "durum": "Durum", "yeni_ders": "Yeni"
         }
         
-        success_count = 0
-        
-        # Tüm değişiklikleri tek bir mesajda gönder
-        message = "🔔 <b>NOT GÜNCELLEMESİ</b>\n\n"
+        # Basit mesaj oluştur
+        message = "🔔 <b>YENİ NOT!</b>\n\n"
         
         for change in changes:
-            course = change.get("course", "Bilinmeyen Ders")
+            course = change.get("course", "?")
             field = change.get("field", "not")
             new_value = change.get("new_value", "-")
             
-            field_display = field_names.get(field, field)
+            field_name = field_names.get(field, field.capitalize())
             
-            # Basit format: DERS ADI: XX (not türü)
-            message += f"📚 {course}: <b>{new_value}</b> ({field_display})\n"
-        
-        message += "\n🎓 ÖBS Bot"
+            # Format: DERS ADI: XX (Not Türü)
+            message += f"📚 <b>{course}</b>: {new_value} ({field_name})\n"
         
         if await self.send_message(message):
-            success_count = len(changes)
-        
-        log_info(f"{success_count}/{len(changes)} bildirim gönderildi")
-        return success_count
+            log_info(f"{len(changes)} bildirim gönderildi")
+            return len(changes)
+        return 0
     
     async def send_startup_notification(self) -> bool:
         """Bot başlatma bildirimi gönder."""
