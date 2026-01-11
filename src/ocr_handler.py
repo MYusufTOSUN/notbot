@@ -1,121 +1,142 @@
 """
-OCR İşleyici Modülü
-Captcha görsellerini işler ve Tesseract OCR ile metne dönüştürür.
+OCR İşleyici Modülü (EasyOCR + OpenCV)
+Captcha görsellerini işler ve EasyOCR ile metne dönüştürür.
+Derin öğrenme tabanlıdır, çizgili ve gürültülü captchaları çözmekte üstündür.
 """
 
 import io
-import re
+import os
+import cv2
+import numpy as np
+import easyocr
 from pathlib import Path
-from PIL import Image, ImageFilter, ImageOps, ImageEnhance
-import pytesseract
-from src.config import OCR_CONFIG, PROJECT_ROOT
 from src.logger import log_info, log_error, log_debug
 
+# EasyOCR Reader'ı global olarak bir kere yükleyelim (Performans için)
+# Sadece rakam okuyacak şekilde yapılandıracağız, ama EasyOCR'da whitelist parametresi read metodunda verilir.
+# GPU varsa kullanır, yoksa CPU.
+READER = None
+
+def get_reader():
+    global READER
+    if READER is None:
+        log_info("EasyOCR modeli yükleniyor... (Bu işlem ilk seferde biraz sürebilir)")
+        # 'en' (English) modelini kullanıyoruz çünkü rakamlar evrensel
+        READER = easyocr.Reader(['en'], gpu=False, verbose=False)
+    return READER
 
 class OCRHandler:
-    """Captcha görsellerini OCR ile işleyen sınıf."""
+    """Captcha görsellerini EasyOCR ve OpenCV ile işleyen sınıf."""
     
     def __init__(self):
-        self.config = OCR_CONFIG
-        self.temp_dir = PROJECT_ROOT / "temp"
+        self.temp_dir = Path("temp")
         self.temp_dir.mkdir(exist_ok=True)
-        
-        # Windows için Tesseract yolunu otomatik bul
-        self._setup_tesseract_path()
+        self.reader = get_reader()
     
-    def _setup_tesseract_path(self):
-        """Windows için Tesseract yolunu bul ve ayarla"""
-        import sys
-        import shutil
-        
-        if sys.platform.startswith('win'):
-            # Eğer PATH'de yoksa yaygın yollara bak
-            if not shutil.which("tesseract"):
-                common_paths = [
-                    r"C:\Program Files\Tesseract-OCR\tesseract.exe",
-                    r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
-                    r"C:\Users\tosun\AppData\Local\Tesseract-OCR\tesseract.exe"
-                ]
-                for path in common_paths:
-                    if os.path.exists(path):
-                        pytesseract.pytesseract.tesseract_cmd = path
-                        log_info(f"Tesseract bulundu: {path}")
-                        return
-                log_error("Tesseract.exe bulunamadı! Lütfen Tesseract OCR'ı kurun.")
-    
-    def preprocess_image(self, image_bytes: bytes) -> Image.Image:
+    def preprocess_image(self, image_bytes: bytes) -> np.ndarray:
         """
-        Görüntüyü OCR için optimize et (Çizgi ve gürültü temizleme).
+        Görüntüyü OpenCV ile agresif şekilde temizle.
+        Çizgileri kaldırmak için morfolojik işlemler uygula.
         """
         try:
-            # Bytes'tan Image nesnesine dönüştür
-            image = Image.open(io.BytesIO(image_bytes))
+            # Bytes -> Numpy Array -> OpenCV Image
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             
-            # RGB moduna çevir
-            if image.mode != 'RGB':
-                image = image.convert('RGB')
+            # 1. Gri tonlama ve Ters Çevirme (Rakamlar genelde koyu, arka plan açık)
+            # Thresholding işlemleri genelde beyaz üzerine siyah veya tam tersi daha iyi çalışır.
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             
-            # 1. Gri tonlama ve Kontrast
-            gray = ImageOps.grayscale(image)
-            enhancer = ImageEnhance.Contrast(gray)
-            high_contrast = enhancer.enhance(3.0)  # Yüksek kontrast
+            # 2. Thresholding (Adaptive yerine standart Otsu daha iyi olabilir çizgiler için)
+            # Binary image: Siyah ve Beyaz
+            _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
             
-            # 2. Boyut artırma (Daha net algılama için 2 kat)
-            width, height = high_contrast.size
-            upscaled = high_contrast.resize((width * 2, height * 2), Image.LANCZOS)
+            # 3. Çizgi Temizleme (Morphological Opening)
+            # Rakamlar kalın, çizgiler incedir. kernel boyutu çizgiyi yutacak kadar büyük,
+            # ama rakamı bozmayacak kadar küçük olmalı.
+            # (2,2) veya (3,3) kernel genelde iş görür.
+            kernel = np.ones((2, 2), np.uint8)
+            opening = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, iterations=1)
             
-            # 3. Eşikleme (Threshold) - Siyah/Beyaz yap
-            # Arka planı beyaz, yazıları siyah yap
-            threshold_val = 160
-            binary = upscaled.point(lambda p: 255 if p > threshold_val else 0)
+            # 4. Parazit Temizleme (Median Blur)
+            # Tuz-biber gürültüsünü alır
+            denoised = cv2.medianBlur(opening, 3)
             
-            # 4. Gürültü ve İnce Çizgi Temizleme (Median Filter)
-            # Bu filtre ince çizgileri ve tek tük pikselleri yok eder
-            denoised = binary.filter(ImageFilter.MedianFilter(size=3))
+            # 5. Genişletme (Dilation)
+            # Opening işlemi rakamları biraz inceltmiş olabilir, geri kalınlaştıralım.
+            dilated = cv2.dilate(denoised, kernel, iterations=1)
             
-            # 5. Keskinleştirme
-            sharpness = ImageEnhance.Sharpness(denoised)
-            final_image = sharpness.enhance(2.0)
+            # 6. Ters çevir (Beyaz üzerine siyah yazı formatına geri dön - EasyOCR bunu sever)
+            final_img = cv2.bitwise_not(dilated)
             
             # Debug için kaydet
-            debug_path = self.temp_dir / "processed_captcha.png"
-            final_image.save(debug_path)
+            cv2.imwrite(str(self.temp_dir / "processed_easyocr.png"), final_img)
+            log_debug("OpenCV ön işleme tamamlandı (Çizgi kaldırma uygulandı)")
             
-            return final_image
+            return final_img
             
         except Exception as e:
             log_error(f"Görüntü ön işleme hatası: {e}")
             raise
     
     def extract_text(self, image_bytes: bytes) -> str:
-        """Captcha görüntüsünden metin çıkar."""
+        """EasyOCR ile metin çıkar."""
         try:
             # Görüntüyü işle
-            processed_image = self.preprocess_image(image_bytes)
+            processed_img = self.preprocess_image(image_bytes)
             
-            # Tesseract Ayarları (Sadece rakam)
-            custom_config = r'--oem 3 --psm 8 -c tessedit_char_whitelist=0123456789'
+            # EasyOCR ile oku
+            # allowlist='0123456789' -> Sadece rakamları tanı
+            try:
+                results = self.reader.readtext(processed_img, allowlist='0123456789', detail=0)
+            except TypeError:
+                # Bazı eski sürümlerde allowlist parametresi farklı olabilir
+                results = self.reader.readtext(processed_img, detail=0)
             
-            # OCR uygula
-            text = pytesseract.image_to_string(processed_image, config=custom_config)
+            # Sonuçları birleştir
+            text = "".join(results)
             
-            # Temizlik
-            numbers = re.sub(r'[^0-9]', '', text)
+            # Sadece rakamları al
+            import re
+            numbers_only = re.sub(r'[^0-9]', '', text)
             
-            log_info(f"OCR sonucu: '{numbers}'")
-            return numbers
+            log_info(f"EasyOCR Sonucu: '{numbers_only}'")
+            return numbers_only
             
-        except pytesseract.TesseractNotFoundError:
-            log_error("Tesseract OCR PROGRAMI YÜKLÜ DEĞİL!")
-            log_error("Lütfen şuradan indirip kurun: https://github.com/UB-Mannheim/tesseract/wiki")
-            return ""
         except Exception as e:
-            log_error(f"OCR hatası: {e}")
+            log_error(f"EasyOCR hatası: {e}")
             return ""
 
     def extract_with_retry(self, image_bytes: bytes, expected_length: int = 4) -> str:
-        """Tek deneme yeterli, güçlü preprocess kullanıyoruz."""
-        return self.extract_text(image_bytes)
+        """
+        Farklı ön işleme yöntemleriyle dene.
+        """
+        # 1. Yöntem: Agresif Çizgi Kaldırma
+        result = self.extract_text(image_bytes)
+        if result and len(result) == expected_length:
+            return result
+        
+        # 2. Yöntem: Sadece Threshold (Belki çizgiler rakamın bir parçası gibidir)
+        try:
+            log_debug("İlk deneme başarısız, alternatif işleme deneniyor...")
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+            
+            results = self.reader.readtext(binary, allowlist='0123456789', detail=0)
+            text = "".join(results)
+            import re
+            numbers_only = re.sub(r'[^0-9]', '', text)
+            
+            if numbers_only and len(numbers_only) == expected_length:
+                log_info(f"Alternatif EasyOCR Sonucu: '{numbers_only}'")
+                return numbers_only
+                
+        except Exception as e:
+            log_error(f"Alternatif yöntem hatası: {e}")
+            
+        return result or ""
             
     def cleanup(self):
         """Geçici dosyaları temizle."""
