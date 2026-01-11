@@ -1,0 +1,123 @@
+[2026-01-11 15:52:40] [INFO] ==================================================
+[2026-01-11 15:52:40] [INFO] ÖBS Push Bot Başlatılıyor...
+[2026-01-11 15:52:41] [INFO] Depolama modu: jsonbin
+[2026-01-11 15:52:41] [DEBUG] JSONBin'den 1 öğe yüklendi
+[2026-01-11 15:52:41] [INFO] Kayıtlı 1 ders bulundu
+[2026-01-11 15:52:41] [INFO] Tarayıcı başlatılıyor...
+[2026-01-11 15:52:42] [SUCCESS] Tarayıcı başlatıldı
+[2026-01-11 15:52:42] [INFO] Giriş denemesi 1/5
+[2026-01-11 15:52:45] [DEBUG] Login sayfası yüklendi
+[2026-01-11 15:52:45] [DEBUG] Öğrenci numarası girildi
+[2026-01-11 15:52:45] [DEBUG] Şifre girildi
+[2026-01-11 15:52:46] [DEBUG] Captcha görseli yakalandı
+[2026-01-11 15:52:46] [DEBUG] OCR yöntemi 1/4 deneniyor...
+[2026-01-11 15:52:46] [DEBUG] Görüntü ön işleme tamamlandı
+[2026-01-11 15:52:46] [DEBUG] İşlenmiş captcha kaydedildi: C:\Users\tosun\Desktop\obispush\temp\processed_captcha.png
+[2026-01-11 15:52:46] [ERROR] Tesseract OCR yüklü değil! Lütfen Tesseract'ı yükleyin.
+[2026-01-11 15:52:46] [DEBUG] Yöntem 1 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:46] [DEBUG] OCR yöntemi 2/4 deneniyor...
+[2026-01-11 15:52:46] [DEBUG] Yöntem 2 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:46] [DEBUG] OCR yöntemi 3/4 deneniyor...
+[2026-01-11 15:52:46] [DEBUG] Yöntem 3 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:46] [DEBUG] OCR yöntemi 4/4 deneniyor...
+[2026-01-11 15:52:46] [DEBUG] Yöntem 4 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:46] [DEBUG] Tüm yöntemler denendi, standart sonuç döndürülüyor
+[2026-01-11 15:52:46] [DEBUG] Görüntü ön işleme tamamlandı
+[2026-01-11 15:52:46] [DEBUG] İşlenmiş captcha kaydedildi: C:\Users\tosun\Desktop\obispush\temp\processed_captcha.png
+[2026-01-11 15:52:46] [ERROR] Tesseract OCR yüklü değil! Lütfen Tesseract'ı yükleyin.
+[2026-01-11 15:52:46] [ERROR] Captcha çözme hatası: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:46] [WARNING] Captcha çözülemedi, sayfa yenileniyor...
+[2026-01-11 15:52:47] [INFO] Giriş denemesi 2/5
+[2026-01-11 15:52:48] [DEBUG] Login sayfası yüklendi
+[2026-01-11 15:52:48] [DEBUG] Öğrenci numarası girildi
+[2026-01-11 15:52:48] [DEBUG] Şifre girildi
+[2026-01-11 15:52:48] [DEBUG] Captcha görseli yakalandı
+[2026-01-11 15:52:48] [DEBUG] OCR yöntemi 1/4 deneniyor...
+[2026-01-11 15:52:48] [DEBUG] Görüntü ön işleme tamamlandı
+[2026-01-11 15:52:48] [DEBUG] İşlenmiş captcha kaydedildi: C:\Users\tosun\Desktop\obispush\temp\processed_captcha.png
+[2026-01-11 15:52:48] [ERROR] Tesseract OCR yüklü değil! Lütfen Tesseract'ı yükleyin.
+[2026-01-11 15:52:48] [DEBUG] Yöntem 1 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:48] [DEBUG] OCR yöntemi 2/4 deneniyor...
+[2026-01-11 15:52:48] [DEBUG] Yöntem 2 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:48] [DEBUG] OCR yöntemi 3/4 deneniyor...
+[2026-01-11 15:52:48] [DEBUG] Yöntem 3 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:48] [DEBUG] OCR yöntemi 4/4 deneniyor...
+[2026-01-11 15:52:48] [DEBUG] Yöntem 4 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:48] [DEBUG] Tüm yöntemler denendi, standart sonuç döndürülüyor
+[2026-01-11 15:52:48] [DEBUG] Görüntü ön işleme tamamlandı
+[2026-01-11 15:52:48] [DEBUG] İşlenmiş captcha kaydedildi: C:\Users\tosun\Desktop\obispush\temp\processed_captcha.png
+[2026-01-11 15:52:48] [ERROR] Tesseract OCR yüklü değil! Lütfen Tesseract'ı yükleyin.
+[2026-01-11 15:52:48] [ERROR] Captcha çözme hatası: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:48] [WARNING] Captcha çözülemedi, sayfa yenileniyor...
+[2026-01-11 15:52:49] [INFO] Giriş denemesi 3/5
+[2026-01-11 15:52:50] [DEBUG] Login sayfası yüklendi
+[2026-01-11 15:52:50] [DEBUG] Öğrenci numarası girildi
+[2026-01-11 15:52:50] [DEBUG] Şifre girildi
+[2026-01-11 15:52:51] [DEBUG] Captcha görseli yakalandı
+[2026-01-11 15:52:51] [DEBUG] OCR yöntemi 1/4 deneniyor...
+[2026-01-11 15:52:51] [DEBUG] Görüntü ön işleme tamamlandı
+[2026-01-11 15:52:51] [DEBUG] İşlenmiş captcha kaydedildi: C:\Users\tosun\Desktop\obispush\temp\processed_captcha.png
+[2026-01-11 15:52:51] [ERROR] Tesseract OCR yüklü değil! Lütfen Tesseract'ı yükleyin.
+[2026-01-11 15:52:51] [DEBUG] Yöntem 1 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:51] [DEBUG] OCR yöntemi 2/4 deneniyor...
+[2026-01-11 15:52:51] [DEBUG] Yöntem 2 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:51] [DEBUG] OCR yöntemi 3/4 deneniyor...
+[2026-01-11 15:52:51] [DEBUG] Yöntem 3 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:51] [DEBUG] OCR yöntemi 4/4 deneniyor...
+[2026-01-11 15:52:51] [DEBUG] Yöntem 4 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:51] [DEBUG] Tüm yöntemler denendi, standart sonuç döndürülüyor
+[2026-01-11 15:52:51] [DEBUG] Görüntü ön işleme tamamlandı
+[2026-01-11 15:52:51] [DEBUG] İşlenmiş captcha kaydedildi: C:\Users\tosun\Desktop\obispush\temp\processed_captcha.png
+[2026-01-11 15:52:51] [ERROR] Tesseract OCR yüklü değil! Lütfen Tesseract'ı yükleyin.
+[2026-01-11 15:52:51] [ERROR] Captcha çözme hatası: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:51] [WARNING] Captcha çözülemedi, sayfa yenileniyor...
+[2026-01-11 15:52:52] [INFO] Giriş denemesi 4/5
+[2026-01-11 15:52:52] [DEBUG] Login sayfası yüklendi
+[2026-01-11 15:52:53] [DEBUG] Öğrenci numarası girildi
+[2026-01-11 15:52:53] [DEBUG] Şifre girildi
+[2026-01-11 15:52:53] [DEBUG] Captcha görseli yakalandı
+[2026-01-11 15:52:53] [DEBUG] OCR yöntemi 1/4 deneniyor...
+[2026-01-11 15:52:53] [DEBUG] Görüntü ön işleme tamamlandı
+[2026-01-11 15:52:53] [DEBUG] İşlenmiş captcha kaydedildi: C:\Users\tosun\Desktop\obispush\temp\processed_captcha.png
+[2026-01-11 15:52:53] [ERROR] Tesseract OCR yüklü değil! Lütfen Tesseract'ı yükleyin.
+[2026-01-11 15:52:53] [DEBUG] Yöntem 1 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:53] [DEBUG] OCR yöntemi 2/4 deneniyor...
+[2026-01-11 15:52:53] [DEBUG] Yöntem 2 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:53] [DEBUG] OCR yöntemi 3/4 deneniyor...
+[2026-01-11 15:52:53] [DEBUG] Yöntem 3 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:53] [DEBUG] OCR yöntemi 4/4 deneniyor...
+[2026-01-11 15:52:53] [DEBUG] Yöntem 4 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:53] [DEBUG] Tüm yöntemler denendi, standart sonuç döndürülüyor
+[2026-01-11 15:52:53] [DEBUG] Görüntü ön işleme tamamlandı
+[2026-01-11 15:52:53] [DEBUG] İşlenmiş captcha kaydedildi: C:\Users\tosun\Desktop\obispush\temp\processed_captcha.png
+[2026-01-11 15:52:53] [ERROR] Tesseract OCR yüklü değil! Lütfen Tesseract'ı yükleyin.
+[2026-01-11 15:52:53] [ERROR] Captcha çözme hatası: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:53] [WARNING] Captcha çözülemedi, sayfa yenileniyor...
+[2026-01-11 15:52:54] [INFO] Giriş denemesi 5/5
+[2026-01-11 15:52:55] [DEBUG] Login sayfası yüklendi
+[2026-01-11 15:52:55] [DEBUG] Öğrenci numarası girildi
+[2026-01-11 15:52:55] [DEBUG] Şifre girildi
+[2026-01-11 15:52:55] [DEBUG] Captcha görseli yakalandı
+[2026-01-11 15:52:55] [DEBUG] OCR yöntemi 1/4 deneniyor...
+[2026-01-11 15:52:55] [DEBUG] Görüntü ön işleme tamamlandı
+[2026-01-11 15:52:55] [DEBUG] İşlenmiş captcha kaydedildi: C:\Users\tosun\Desktop\obispush\temp\processed_captcha.png
+[2026-01-11 15:52:55] [ERROR] Tesseract OCR yüklü değil! Lütfen Tesseract'ı yükleyin.
+[2026-01-11 15:52:55] [DEBUG] Yöntem 1 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:55] [DEBUG] OCR yöntemi 2/4 deneniyor...
+[2026-01-11 15:52:55] [DEBUG] Yöntem 2 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:55] [DEBUG] OCR yöntemi 3/4 deneniyor...
+[2026-01-11 15:52:55] [DEBUG] Yöntem 3 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:55] [DEBUG] OCR yöntemi 4/4 deneniyor...
+[2026-01-11 15:52:55] [DEBUG] Yöntem 4 başarısız: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:55] [DEBUG] Tüm yöntemler denendi, standart sonuç döndürülüyor
+[2026-01-11 15:52:55] [DEBUG] Görüntü ön işleme tamamlandı
+[2026-01-11 15:52:55] [DEBUG] İşlenmiş captcha kaydedildi: C:\Users\tosun\Desktop\obispush\temp\processed_captcha.png
+[2026-01-11 15:52:55] [ERROR] Tesseract OCR yüklü değil! Lütfen Tesseract'ı yükleyin.
+[2026-01-11 15:52:55] [ERROR] Captcha çözme hatası: tesseract is not installed or it's not in your PATH. See README file for more information.
+[2026-01-11 15:52:55] [WARNING] Captcha çözülemedi, sayfa yenileniyor...
+[2026-01-11 15:52:56] [ERROR] Giriş 5 denemeden sonra başarısız!
+[2026-01-11 15:52:56] [DEBUG] Geçici dosyalar temizlendi
+[2026-01-11 15:52:56] [INFO] Tarayıcı kapatıldı
+[2026-01-11 15:52:56] [ERROR] ÖBS girişi başarısız!
+[2026-01-11 15:52:59] [ERROR] Kritik hata: 'charmap' codec can't encode characters in position 60-61: character maps to <undefined>
+[2026-01-11 15:52:59] [ERROR] Telegram gönderim hatası: Can't parse entities: unsupported start tag "undefined" at byte offset 164
