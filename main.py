@@ -40,12 +40,12 @@ async def main():
         log_info(f"Kayıtlı {len(old_grades)} ders bulundu")
         
         # Bot'u çalıştır
-        success, new_grades = await run_bot()
+        success, new_grades, error_msg = await run_bot()
         
         if not success:
-            log_error("ÖBS girişi başarısız!")
+            log_error(f"ÖBS girişi başarısız: {error_msg}")
             result_status = "❌ Giriş Başarısız"
-            result_details = "ÖBS'ye giriş yapılamadı. Site erişilemez veya captcha çözülemedi."
+            result_details = f"ÖBS'ye giriş yapılamadı.\nSebep: {error_msg}"
         else:
             # Dönem ortalamasını al
             donem_ortalamasi = new_grades.pop("_donem_ortalamasi", "")
