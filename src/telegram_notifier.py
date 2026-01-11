@@ -80,30 +80,38 @@ class TelegramNotifier:
     async def send_multiple_grade_notifications(self, changes: List[Dict]) -> int:
         """
         Birden fazla not değişikliği bildirimi gönder.
-        Kısa format: DERS ADI: XX
+        Format: DERS ADI, Vize1: XX, Final: XX, Harf: XX
         """
         if not changes:
             return 0
-        
-        # Alan adlarını Türkçeleştir
-        field_names = {
-            "vize1": "Vize", "vize2": "Vize2", "vize3": "Vize3", "vize4": "Vize4",
-            "final": "Final", "but": "Büt", "gn": "GN", "harf": "Harf",
-            "durum": "Durum", "yeni_ders": "Yeni"
-        }
         
         # Basit mesaj oluştur
         message = "🔔 <b>YENİ NOT!</b>\n\n"
         
         for change in changes:
             course = change.get("course", "?")
-            field = change.get("field", "not")
-            new_value = change.get("new_value", "-")
+            grade_info = change.get("grade_info", {})
             
-            field_name = field_names.get(field, field.capitalize())
+            # Ders adı satırı
+            message += f"📚 <b>{course}</b>\n"
             
-            # Format: DERS ADI: XX (Not Türü)
-            message += f"📚 <b>{course}</b>: {new_value} ({field_name})\n"
+            # Not bilgileri satırı
+            notes = []
+            if grade_info.get("vize1"):
+                notes.append(f"Vize1: {grade_info['vize1']}")
+            if grade_info.get("final"):
+                notes.append(f"Final: {grade_info['final']}")
+            if grade_info.get("but"):
+                notes.append(f"Büt: {grade_info['but']}")
+            if grade_info.get("harf"):
+                notes.append(f"Harf: {grade_info['harf']}")
+            if grade_info.get("gn"):
+                notes.append(f"GN: {grade_info['gn']}")
+            
+            if notes:
+                message += f"   {' | '.join(notes)}\n\n"
+            else:
+                message += "\n"
         
         if await self.send_message(message):
             log_info(f"{len(changes)} bildirim gönderildi")

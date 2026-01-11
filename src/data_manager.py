@@ -94,21 +94,15 @@ class DataManager:
             ders_adi = grade_info.get("ders_adi", course)
             
             if course not in old_grades:
-                # Yeni ders eklendi - önemli notlar varsa bildir
-                important_values = []
-                for field in tracked_fields:
-                    value = grade_info.get(field, "")
-                    if value and value.strip():
-                        important_values.append(f"{field}: {value}")
-                
-                if important_values:
-                    changes.append({
-                        "course": ders_adi,  # Ders adını kullan
-                        "field": "yeni_ders",
-                        "old_value": None,
-                        "new_value": ", ".join(important_values[:3])
-                    })
-                    log_info(f"Yeni ders tespit edildi: {ders_adi}")
+                # Yeni ders eklendi
+                changes.append({
+                    "course": ders_adi,
+                    "field": "yeni_ders",
+                    "grade_info": grade_info,  # Tüm not bilgilerini ekle
+                    "old_value": None,
+                    "new_value": "Yeni ders"
+                })
+                log_info(f"Yeni ders tespit edildi: {ders_adi}")
                     
             else:
                 old_grade_info = old_grades[course]
@@ -116,19 +110,25 @@ class DataManager:
                     old_grade_info = {}
                 
                 # Her alan için değişiklik kontrolü
+                has_change = False
                 for field in tracked_fields:
                     new_value = grade_info.get(field, "").strip()
                     old_value = old_grade_info.get(field, "").strip()
                     
                     # Boş olmayan yeni değer var ve eskiden farklıysa
                     if new_value and new_value != old_value:
-                        changes.append({
-                            "course": ders_adi,  # Ders adını kullan
-                            "field": field,
-                            "old_value": old_value if old_value else "boş",
-                            "new_value": new_value
-                        })
+                        has_change = True
                         log_info(f"Not değişikliği: {ders_adi} - {field}: {old_value or 'boş'} -> {new_value}")
+                
+                # Değişiklik varsa tek bir kayıt ekle (tüm bilgilerle)
+                if has_change:
+                    changes.append({
+                        "course": ders_adi,
+                        "field": "güncelleme",
+                        "grade_info": grade_info,  # Tüm not bilgilerini ekle
+                        "old_value": None,
+                        "new_value": "Güncellendi"
+                    })
         
         if not changes:
             log_debug("Notlarda değişiklik yok")
