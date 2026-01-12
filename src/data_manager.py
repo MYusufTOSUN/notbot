@@ -170,54 +170,74 @@ class DataManager:
     # ===== JSONBin.io Depolama =====
     
     def _load_from_jsonbin(self) -> Dict:
-        """JSONBin.io'dan yükle."""
-        try:
-            url = f"https://api.jsonbin.io/v3/b/{JSONBIN_BIN_ID}/latest"
-            headers = {
-                "X-Master-Key": JSONBIN_API_KEY,
-                "X-Bin-Meta": "false"
-            }
-            
-            response = requests.get(url, headers=headers, timeout=10)
-            
-            if response.status_code == 200:
-                data = response.json()
-                log_debug(f"JSONBin'den {len(data)} öğe yüklendi")
-                return data
-            else:
-                log_warning(f"JSONBin yükleme hatası: {response.status_code}")
-                return {}
+        """JSONBin.io'dan yükle - Hata durumunda local'e fallback."""
+        max_retries = 3
+        
+        for attempt in range(1, max_retries + 1):
+            try:
+                url = f"https://api.jsonbin.io/v3/b/{JSONBIN_BIN_ID}/latest"
+                headers = {
+                    "X-Master-Key": JSONBIN_API_KEY,
+                    "X-Bin-Meta": "false"
+                }
                 
-        except requests.RequestException as e:
-            log_error(f"JSONBin bağlantı hatası: {e}")
-            return {}
+                response = requests.get(url, headers=headers, timeout=30)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    log_debug(f"JSONBin'den {len(data)} öğe yüklendi")
+                    return data
+                else:
+                    log_warning(f"JSONBin yükleme hatası: {response.status_code}")
+                    
+            except requests.RequestException as e:
+                log_warning(f"JSONBin bağlantı hatası (deneme {attempt}/{max_retries}): {e}")
+                if attempt < max_retries:
+                    import time
+                    time.sleep(2)  # 2 saniye bekle ve tekrar dene
+                    continue
+        
+        # JSONBin başarısız - local'den yükle
+        log_warning("JSONBin'e erişilemedi, local dosyadan yükleniyor...")
+        return self._load_from_local()
     
     def _save_to_jsonbin(self, grades: Dict) -> bool:
-        """JSONBin.io'ya kaydet."""
-        try:
-            url = f"https://api.jsonbin.io/v3/b/{JSONBIN_BIN_ID}"
-            headers = {
-                "Content-Type": "application/json",
-                "X-Master-Key": JSONBIN_API_KEY
-            }
-            
-            response = requests.put(
-                url,
-                json=grades,
-                headers=headers,
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                log_debug("Veriler JSONBin'e kaydedildi")
-                return True
-            else:
-                log_error(f"JSONBin kaydetme hatası: {response.status_code}")
-                return False
+        """JSONBin.io'ya kaydet - Hata durumunda local'e fallback."""
+        max_retries = 3
+        
+        for attempt in range(1, max_retries + 1):
+            try:
+                url = f"https://api.jsonbin.io/v3/b/{JSONBIN_BIN_ID}"
+                headers = {
+                    "Content-Type": "application/json",
+                    "X-Master-Key": JSONBIN_API_KEY
+                }
                 
-        except requests.RequestException as e:
-            log_error(f"JSONBin bağlantı hatası: {e}")
-            return False
+                response = requests.put(
+                    url,
+                    json=grades,
+                    headers=headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    log_debug("Veriler JSONBin'e kaydedildi")
+                    # Aynı zamanda local'e de kaydet (yedek)
+                    self._save_to_local(grades)
+                    return True
+                else:
+                    log_warning(f"JSONBin kaydetme hatası: {response.status_code}")
+                    
+            except requests.RequestException as e:
+                log_warning(f"JSONBin kaydetme hatası (deneme {attempt}/{max_retries}): {e}")
+                if attempt < max_retries:
+                    import time
+                    time.sleep(2)
+                    continue
+        
+        # JSONBin başarısız - local'e kaydet
+        log_warning("JSONBin'e kaydedilemedi, local dosyaya kaydediliyor...")
+        return self._save_to_local(grades)
     
     # ===== GitHub API Depolama =====
     
