@@ -631,46 +631,40 @@ class OBSBot:
                     grade_info["durum"] = val
         
         # Header yoksa veya ders kodu/adı bulunamadıysa pozisyona göre tahmin et
-        # Selçuk ÖBS yapısı: Yarıyıl, Ders Kodu, Ders Adı, T, U, K, AKTS, Vize1, Vize2, Final, Büt, YS, BN, BD, Durum
+        # Selçuk ÖBS yapısı: Ders Kodu, Yarıyıl, Ders Adı, T, U, K, AKTS, Vize1, Vize2, Final, Büt, YS, BN, BD, Durum
         if not grade_info["ders_kodu"] or not grade_info["ders_adi"]:
             log_debug(f"Header eşlemesi başarısız, pozisyona göre tahmin ediliyor. Değerler: {values[:5]}")
             
-            # İlk değer yarıyıl mı kontrol et (genelde "2024-2025 Güz" gibi)
-            first_val = values[0].lower() if values[0] else ""
+            # Selçuk ÖBS sabit yapısı:
+            # Sütun 0: Ders Kodu
+            # Sütun 1: Yarıyıl
+            # Sütun 2: Ders Adı
+            grade_info["ders_kodu"] = values[0] if len(values) > 0 else ""
+            grade_info["yariyil"] = values[1] if len(values) > 1 else ""
+            grade_info["ders_adi"] = values[2] if len(values) > 2 else ""
             
-            if 'güz' in first_val or 'guz' in first_val or 'bahar' in first_val or '-' in first_val or len(values[0]) > 10:
-                # İlk sütun yarıyıl
-                grade_info["yariyil"] = values[0]
-                grade_info["ders_kodu"] = values[1] if len(values) > 1 else ""
-                grade_info["ders_adi"] = values[2] if len(values) > 2 else ""
-                
-                # Notlar için offset 3'ten başla
-                if len(values) >= 15:
-                    grade_info["vize1"] = values[7] if len(values) > 7 else ""
-                    grade_info["vize2"] = values[8] if len(values) > 8 else ""
-                    grade_info["final"] = values[9] if len(values) > 9 else ""
-                    grade_info["but"] = values[10] if len(values) > 10 else ""
-                    grade_info["gn"] = values[12] if len(values) > 12 else ""
-                    grade_info["harf"] = values[13] if len(values) > 13 else ""
-                    grade_info["durum"] = values[14] if len(values) > 14 else ""
-            else:
-                # İlk sütun ders kodu
-                grade_info["ders_kodu"] = values[0]
-                grade_info["ders_adi"] = values[1] if len(values) > 1 else ""
-                
-                if len(values) >= 14:
-                    grade_info["vize1"] = values[6] if len(values) > 6 else ""
-                    grade_info["vize2"] = values[7] if len(values) > 7 else ""
-                    grade_info["final"] = values[8] if len(values) > 8 else ""
-                    grade_info["but"] = values[9] if len(values) > 9 else ""
-                    grade_info["gn"] = values[11] if len(values) > 11 else ""
-                    grade_info["harf"] = values[12] if len(values) > 12 else ""
-                    grade_info["durum"] = values[13] if len(values) > 13 else ""
-                elif len(values) >= 7:
-                    grade_info["vize1"] = values[3] if len(values) > 3 else ""
-                    grade_info["final"] = values[4] if len(values) > 4 else ""
-                    grade_info["but"] = values[5] if len(values) > 5 else ""
-                    grade_info["harf"] = values[6] if len(values) > 6 else ""
+            # Notlar - sütun sayısına göre
+            if len(values) >= 15:
+                # Detaylı yapı: Kod, Yarıyıl, Ad, T, U, K, AKTS, Vize1, Vize2, Final, Büt, YS, BN, BD, Durum
+                grade_info["vize1"] = values[7] if len(values) > 7 else ""
+                grade_info["vize2"] = values[8] if len(values) > 8 else ""
+                grade_info["final"] = values[9] if len(values) > 9 else ""
+                grade_info["but"] = values[10] if len(values) > 10 else ""
+                grade_info["gn"] = values[12] if len(values) > 12 else ""
+                grade_info["harf"] = values[13] if len(values) > 13 else ""
+                grade_info["durum"] = values[14] if len(values) > 14 else ""
+            elif len(values) >= 10:
+                # Orta yapı
+                grade_info["vize1"] = values[5] if len(values) > 5 else ""
+                grade_info["final"] = values[6] if len(values) > 6 else ""
+                grade_info["but"] = values[7] if len(values) > 7 else ""
+                grade_info["gn"] = values[8] if len(values) > 8 else ""
+                grade_info["harf"] = values[9] if len(values) > 9 else ""
+            elif len(values) >= 7:
+                # Basit yapı
+                grade_info["vize1"] = values[4] if len(values) > 4 else ""
+                grade_info["final"] = values[5] if len(values) > 5 else ""
+                grade_info["harf"] = values[6] if len(values) > 6 else ""
         
         # Ders kodu kontrolü - başlık satırı veya boş satır ise None döndür
         ders_kodu = grade_info["ders_kodu"]
