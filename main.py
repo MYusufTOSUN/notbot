@@ -2,10 +2,10 @@
 """
 ÖBS Push Bot - Ana Giriş Noktası
 Bu dosya botu başlatır ve tüm akışı yönetir.
+Sadece not değişikliği olduğunda Telegram bildirimi gönderir.
 """
 import asyncio
 import sys
-from datetime import datetime
 from src.config import validate_config
 from src.bot import run_bot
 from src.data_manager import DataManager
@@ -27,13 +27,6 @@ async def main():
     notifier = TelegramNotifier()
     data_manager = DataManager()
     
-    # Sonuç bilgisi için değişkenler
-    result_status = "❓ Bilinmiyor"
-    result_details = ""
-    grades_count = 0
-    changes_count = 0
-    donem_ortalamasi = ""
-    
     try:
         # Eski notları yükle
         old_grades = data_manager.load_grades()
@@ -44,67 +37,36 @@ async def main():
         
         if not success:
             log_error(f"ÖBS girişi başarısız: {error_msg}")
-            result_status = "❌ Giriş Başarısız"
-            result_details = f"ÖBS'ye giriş yapılamadı.\nSebep: {error_msg}"
+            # Giriş başarısız - mesaj gönderme
+            return
+        
+        # Dönem ortalamasını al (meta veri)
+        donem_ortalamasi = new_grades.pop("_donem_ortalamasi", "")
+        grades_count = len(new_grades)
+        
+        if not new_grades:
+            log_info("Henüz not yok")
+            # Not yok - mesaj gönderme
+            return
+        
+        # Değişiklikleri tespit et
+        changes = data_manager.compare_grades(old_grades, new_grades)
+        
+        if changes:
+            # SADECE DEĞİŞİKLİK VARSA MESAJ GÖNDER
+            log_success(f"{len(changes)} not değişikliği tespit edildi!")
+            await notifier.send_multiple_grade_notifications(changes)
+            data_manager.save_grades(new_grades)
+            log_success("Bildirim gönderildi ve notlar kaydedildi!")
         else:
-            # Dönem ortalamasını al
-            donem_ortalamasi = new_grades.pop("_donem_ortalamasi", "")
-            grades_count = len(new_grades)
-            
-            if not new_grades:
-                log_info("Henüz not yok")
-                result_status = "✅ Çalıştı"
-                result_details = "Giriş başarılı, ancak henüz açıklanmış not bulunamadı."
-            else:
-                # Değişiklikleri tespit et
-                changes = data_manager.compare_grades(old_grades, new_grades)
-                changes_count = len(changes)
-                
-                if changes:
-                    log_success(f"{len(changes)} not değişikliği tespit edildi!")
-                    await notifier.send_multiple_grade_notifications(changes)
-                    data_manager.save_grades(new_grades)
-                    result_status = "🎉 Yeni Not!"
-                    result_details = f"{changes_count} adet not değişikliği tespit edildi ve bildirildi."
-                else:
-                    log_info("Notlarda değişiklik yok")
-                    result_status = "✅ Çalıştı"
-                    result_details = f"{grades_count} ders kontrol edildi, değişiklik yok."
+            log_info(f"Notlarda değişiklik yok ({grades_count} ders kontrol edildi)")
+            # Değişiklik yok - mesaj gönderme
         
         log_success("Bot başarıyla tamamlandı!")
         
     except Exception as e:
         log_error(f"Kritik hata: {e}")
-        result_status = "💥 Kritik Hata"
-        result_details = str(e)
-    
-    finally:
-        # Her durumda özet bildirim gönder
-        now = datetime.now().strftime("%d.%m.%Y %H:%M")
-        
-        # Ortalama bilgisi
-        ortalama_line = ""
-        if donem_ortalamasi:
-            ortalama_line = f"\n📈 <b>2024-2025 GÜZ:</b> {donem_ortalamasi}\n"
-        
-        summary_message = (
-            f"📊 <b>ÖBS Bot Raporu</b>\n"
-            f"━━━━━━━━━━━━━━━━━━\n\n"
-            f"🕐 <b>Zaman:</b> {now}\n"
-            f"📌 <b>Durum:</b> {result_status}\n\n"
-            f"📝 <b>Detay:</b>\n{result_details}\n\n"
-            f"📚 <b>Kontrol Edilen:</b> {grades_count} ders\n"
-            f"🔔 <b>Değişiklik:</b> {changes_count} adet"
-            f"{ortalama_line}"
-            f"\n━━━━━━━━━━━━━━━━━━\n"
-            f"🤖 <i>Sonraki kontrol 20 dk sonra</i>"
-        )
-        
-        try:
-            await notifier.send_message(summary_message)
-            log_success("Özet bildirim gönderildi")
-        except Exception as e:
-            log_error(f"Özet bildirim gönderilemedi: {e}")
+        # Hata durumunda da mesaj gönderme
 
 
 if __name__ == "__main__":
